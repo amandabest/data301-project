@@ -1,0 +1,36 @@
+---
+title: "Data 301 Project"
+author: "Group 4"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background and Data
+
+## Ethics and Privacy
+
+## Exploratory Data Analysis
+
+```{r, echo=FALSE}
+
+#any packages we need to import can go here
+library(dplyr)
+
+```
+
+```{r}
+#reading in and combining the three CSVs
+
+temp1 <- read.csv("daily-temperature-for-30-sites-to-2022-part1.csv")
+temp2 <- read.csv("daily-temperature-for-30-sites-to-2022-part2.csv")
+temp3 <- read.csv("daily-temperature-for-30-sites-to-2022-part3.csv")
+
+temp4 <- full_join(temp1, temp2)
+temp <- full_join(temp4, temp3)
+```
+
+## Individual Contributions
