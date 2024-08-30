@@ -2,8 +2,16 @@
 title: "Data 301 Project"
 author: "Group 4"
 date: "`r Sys.Date()`"
-output: pdf_document
+output: html_document
+runtime: shiny
 ---
+```{css, echo=FALSE}
+.plot-container {
+  width: 100%;
+  height: 500px;
+  margin: auto;
+}
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -36,17 +44,12 @@ temp3 <- read.csv("daily-temperature-for-30-sites-to-2022-part3.csv")
 
 temp4 <- full_join(temp1, temp2)
 temp <- full_join(temp4, temp3)
-```
-
-## Individual Contributions
-```{r}
-#when you run this code it might say error instead of displaying the graph/plot, just wait a little bit and it should correct itself (you will need to wait a little bit when applying filters and switching tabs to another plot, they will all say an error at first but disappear after a few seconds and the plot is displayed)
 
 get_season <- function(date) {
   #convert date to a format that can be used for comparison
   md <- format(ymd(date), "%m-%d")
   
-  case_when(
+  case_when( #assign season to data depending on the date
     md >= "12-01" | md <= "02-28" ~ "Summer",
     md >= "03-01" & md <= "05-31" ~ "Autumn",
     md >= "06-01" & md <= "08-31" ~ "Winter",
@@ -60,9 +63,26 @@ temp <- temp %>%
   mutate(season = get_season(date),
          year = year(ymd(date)))  #adding a year column for time-based analysis
 
+```
+
+## Individual Contributions
+```{r}
+#OPEN IN FULL SCREEN
+#when you run this code it might say error instead of displaying the graph/plot, just wait a little bit and it should correct itself (you will need to wait a little bit when applying filters and switching tabs to another plot, they will all say an error at first but disappear after a few seconds and then the plot is displayed)
+
+
 
 ui <- fluidPage(
-  useShinyjs(), #use shinyJS to implement javascript so that interactive and dynamic UI elements can be added to the Shiny app
+  useShinyjs(), #use shinyJS to implement JavaScript for interactive and dynamic UI elements
+  tags$head(
+    tags$style(HTML("
+      .plot-container {
+        width: 100%;
+        height: 800px;
+        margin: auto;
+      }
+    "))
+  ),
   titlePanel("Temperature Data Analysis"),
   
   #tabbed layout
@@ -106,7 +126,14 @@ ui <- fluidPage(
                  selectInput("site", "Select Site:", choices = c("All Sites", unique(temp$site)))
                ),
                mainPanel(
-                 plotlyOutput("distPlot", height = "700px")
+                 
+                 div(class = "plot-container",
+                     plotlyOutput("distPlot", height = "100%")
+                 ),
+                 tags$div(
+                   tags$h3("Histogram and Density Plot Analysis"),
+                   tags$p("REPORT IN HERE") #WRITE REPORT SECTION IN HERE
+                 ),
                )
              )),
     
@@ -125,9 +152,12 @@ ui <- fluidPage(
                          choices = c("Individual Years", "Year Range"),
                          selected = "Year Range"),
              
-             uiOutput("box_individual_year_ui"),
              
+             uiOutput("box_individual_year_ui"),
              uiOutput("box_year_range_ui"),
+             helpText("Note: Please select a year from the list above when doing individual years"),
+             
+             
              
              #season selection
              selectInput("box_season", "Select Season:",
@@ -140,7 +170,13 @@ ui <- fluidPage(
              uiOutput("add_site_ui")  #dynamic UI for add site button
            ),
            mainPanel(
-             plotlyOutput("boxPlot", height = "700px")
+             div(class = "plot-container",
+                 plotlyOutput("boxPlot", height = "100%")
+             ),
+             tags$div(
+               tags$h3("Boxplot Analysis"),
+               tags$p("REPORT IN HERE") #WRITE REPORT IN THIS SECTION
+             )
            )
          )),
     
@@ -185,7 +221,13 @@ ui <- fluidPage(
                              selected = "RdBu")
                ),
                mainPanel(
-                 plotlyOutput("corMatrixPlot", height = "700px")  #correlation matrix plot output
+                 div(class = "plot-container",
+                     plotlyOutput("corMatrixPlot", height = "100%")
+                 ),
+                 tags$div(
+                   tags$h3("Correlation Matrix Analysis"),
+                   tags$p("WRITE REPORT  IN HERE")
+                 )
                )
              ))
   )
