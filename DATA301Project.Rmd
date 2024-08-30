@@ -19,7 +19,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #any packages we need to import can go here
 library(dplyr)
-
+library(plotly)
+library(shiny)
 ```
 
 ```{r}
@@ -34,3 +35,26 @@ temp <- full_join(temp4, temp3)
 ```
 
 ## Individual Contributions
+```{r}
+#Histogram and Density Plot
+
+#shiny UI
+ui <- fluidpage(
+  titlePanel("Tempearature EDA"),
+  sidebarLayout(
+    sidebarPanel(
+      #inputs
+    ),
+    mainPanel(
+      #outputs
+    )
+  )
+)
+
+server <- function(input, output){
+  #logic
+}
+
+shinyApp(ui = ui, server = server)
+```
+
