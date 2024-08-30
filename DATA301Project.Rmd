@@ -21,6 +21,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(plotly)
 library(shiny)
+library(ggplot2)
+library(shinyjs)
 ```
 
 ```{r}
@@ -37,24 +39,139 @@ temp <- full_join(temp4, temp3)
 ## Individual Contributions
 ```{r}
 #Histogram and Density Plot
-
-#shiny UI
-ui <- fluidpage(
-  titlePanel("Tempearature EDA"),
+ui <- fluidPage(
+  useShinyjs(), #use shinyJS to implement javascript so that interactive and dynamic UI elements can be added to the Shiny app
+  titlePanel("Temperature Data Analysis"),
   sidebarLayout(
     sidebarPanel(
       #inputs
+      #histogram section label
+      h4("Histogram"),
+      
+      #histogram inputs
+      radioButtons("plot_type", "Plot Type:",
+                   choices = c("Histogram" = "histogram", "Density Plot" = "density")),
+      
+      #overlay density plot checkbox with help text
+      tagList(
+        checkboxInput("overlay", "Overlay Density Plot on Histogram", value = FALSE),
+        helpText("Note: Histogram must be selected as the plot type for the density overlay to work.")
+      ),
+      
+      sliderInput("binwidth", "Bin Width:", min = 1, max = 5, value = 1),
+      selectInput("site", "Select Site:", choices = c("All Sites", unique(temp$site))),
+      
+      hr(),  #separate the different plot sections
+      
+      #boxplot section label
+      h4("Boxplot"),
+      
+      #boxplot inputs
+      selectInput("comparison_type", "Comparison Type:",
+                  choices = c("All Sites" = "all", "Compare Sites" = "compare")),
+      uiOutput("comparison_sites_ui"),
+      uiOutput("add_site_ui")  #dynamic UI for add site button
     ),
     mainPanel(
-      #outputs
+      plotlyOutput("distPlot", height = "700px"), 
+      plotlyOutput("boxPlot", height = "600px")   
     )
   )
 )
 
-server <- function(input, output){
-  #logic
+server <- function(input, output, session) {
+  #reactive values to keep track of number of sites to compare
+  rv <- reactiveValues(num_sites = 1) #default to 1 site
+  
+  observeEvent(input$add_site, { #add an additional site to compare when the "+" button is pressed
+    if (rv$num_sites < length(unique(temp$site))) {
+      rv$num_sites <- rv$num_sites + 1
+    }
+  })
+  
+  #preserve selected sites when adding a new site, so that the selections dont reset when you press "+"
+  observe({
+    for (i in seq_len(rv$num_sites)) {
+      if (!is.null(input[[paste0("site", i)]])) {
+        updateSelectInput(session, paste0("site", i), selected = input[[paste0("site", i)]])
+      }
+    }
+  })
+  
+  output$comparison_sites_ui <- renderUI({
+    if (input$comparison_type == "compare") {
+      tagList(
+        lapply(1:rv$num_sites, function(i) {
+          selectInput(paste0("site", i), paste0("Select Site ", i), choices = unique(temp$site))
+        })
+      )
+    }
+  })
+  
+  output$add_site_ui <- renderUI({
+    if (input$comparison_type == "compare") {
+      if (rv$num_sites < length(unique(temp$site))) {
+        actionButton("add_site", "+")  #show "+" button only if "Compare Sites" is selected
+      }
+    }
+  })
+  
+  output$distPlot <- renderPlotly({
+    filtered_data <- if (input$site == "All Sites") {
+      temp
+    } else {
+      temp %>% filter(site == input$site)
+    }
+    
+    #remove NA values
+    filtered_data <- filtered_data %>% filter(!is.na(temperature))
+    
+    title_text <- paste(input$plot_type, "for", input$site)
+    
+    p <- ggplot(filtered_data, aes(x = temperature)) + 
+      theme_minimal()
+    
+    if (input$plot_type == "histogram") {
+      p <- p + geom_histogram(binwidth = input$binwidth, fill = "blue", alpha = 0.7)
+      
+      if (input$overlay) {
+        p <- p + geom_density(aes(y = ..count..), color = "red", fill = NA, size = 1)
+      }
+    } else if (input$plot_type == "density") {
+      p <- p + geom_density(fill = "blue", alpha = 0.5)
+    }
+    
+    if (input$site == "All Sites") {
+      p <- p + facet_wrap(~site, scales = "free")
+    }
+    
+    p <- p + ggtitle(title_text)
+    
+    ggplotly(p)
+  })
+
+  output$boxPlot <- renderPlotly({
+    if (input$comparison_type == "all") {
+      filtered_data <- temp
+      title_text <- "Boxplot for All Sites"
+    } else if (input$comparison_type == "compare") {
+      selected_sites <- sapply(seq_len(rv$num_sites), function(i) input[[paste0("site", i)]])
+      filtered_data <- temp %>% filter(site %in% selected_sites)
+      title_text <- paste("Boxplot Comparing Sites:", paste(selected_sites, collapse = ", "))
+    }
+    
+    p <- ggplot(filtered_data, aes(x = factor(site), y = temperature)) +
+      geom_boxplot() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +  #rotate labels and reduce size
+      labs(x = "Site")  #correct the x-axis label so it isn't "factor(site)"
+    
+    p <- p + ggtitle(title_text)
+    
+    ggplotly(p)
+  })
 }
 
 shinyApp(ui = ui, server = server)
 ```
+
 

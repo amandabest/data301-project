@@ -1,6 +1,8 @@
 # data301-project
 
 # Packages that need to be installed:
-# - shiny 
+# - dplyr 
 # - plotly
-# - dplyr
+# - shiny
+# - ggplot2
+# - shinyjs
