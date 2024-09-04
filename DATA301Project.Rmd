@@ -29,9 +29,14 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(plotly)
 library(shiny)
+library(shinyWidgets)
 library(ggplot2)
 library(shinyjs)
 library(lubridate)
+library(fpp3)
+library(forecast)
+library(fable)
+library(ggfortify)
 
 ```
 
@@ -63,9 +68,15 @@ temp <- temp %>%
   mutate(season = get_season(date),
          year = year(ymd(date)))  #adding a year column for time-based analysis
 
+
+temp$date <- as.Date(temp$date) #convert date column to date object
+temp <- temp %>% arrange(date) #sort data by date
+
 ```
 
-## Individual Contributions
+
+
+
 ```{r}
 #OPEN IN FULL SCREEN
 #when you run this code it might say error instead of displaying the graph/plot, just wait a little bit and it should correct itself (you will need to wait a little bit when applying filters and switching tabs to another plot, they will all say an error at first but disappear after a few seconds and then the plot is displayed)
@@ -229,8 +240,43 @@ ui <- fluidPage(
                    tags$p("WRITE REPORT  IN HERE")
                  )
                )
-             ))
-  )
+             )),
+    
+      tabPanel("Time Series",
+           sidebarLayout(
+             sidebarPanel(
+               h4("Time Series"),
+               
+               #statistic selection
+               selectInput("ts_statistic", "Select Statistic:", 
+                           choices = unique(temp$statistic), selected = "Average"),
+               
+               #year selection
+               selectInput("ts_year_type", "Select Year(s):",
+                           choices = c("Individual Years", "Year Range"),
+                           selected = "Year Range"),
+               
+               uiOutput("ts_individual_year_ui"),
+               
+               uiOutput("ts_year_range_ui"),
+               
+               pickerInput("ts_site", "Select Site:", choices = unique(temp$site),
+                           selected = c("Whangārei (Northland)", "Auckland (Auckland)",
+                                        "Wellington (Wellington)", "Blenheim (Marlborough)",
+                                        "Christchurch (Canterbury)", "Invercargill (Southland)"),
+                           options = list(`actions-box` = TRUE), multiple = TRUE)
+           ),
+             mainPanel(
+               div(class = "plot-container",
+                   plotlyOutput("timePlot", height = "100%")
+               ),
+               tags$div(
+                 tags$h3("Time Series Analysis"),
+                 tags$p("WRITE REPORT  IN HERE")
+               )
+             )
+           )),
+    )
 )
 
 
@@ -323,6 +369,24 @@ server <- function(input, output, session) {
       NULL
     }
   })
+
+  
+  output$ts_year_range_ui <- renderUI({
+    if (input$ts_year_type == "Year Range") {
+      sliderInput("ts_year_range", "Select Year Range:", sep="", min = min(temp$year), max = max(temp$year),
+                  value = c(1990, max(temp$year)), step = 1)
+    } else {
+      NULL
+    }
+  })
+  
+  output$ts_individual_year_ui <- renderUI({
+    if (input$ts_year_type == "Individual Years") {
+      selectInput("ts_year", "Select Year(s):", choices = unique(temp$year), multiple = TRUE)
+    } else {
+      NULL
+    }
+  })
   
   #filter data based on the selected year and season
   filtered_data <- reactive({
@@ -337,6 +401,25 @@ server <- function(input, output, session) {
     if (input$season != "All") {
       data <- data %>% filter(season == input$season)
     }
+    
+    data
+  })
+  
+  #filter data based on the selected stat, site, and year
+  ts_data <- reactive({
+    
+    data <- temp %>% 
+      filter(statistic == input$ts_statistic & site %in% input$ts_site) %>% 
+      as_tsibble(key = site, index=date)
+    
+    
+    
+    if (input$ts_year_type == "Individual Years") {
+      data <- data %>% filter(year %in% input$ts_year)
+    } else if (input$ts_year_type == "Year Range") {
+      data <- data %>% filter(year >= input$ts_year_range[1] & year <= input$ts_year_range[2])
+    }
+    
     
     data
   })
@@ -478,14 +561,39 @@ server <- function(input, output, session) {
     
     ggplotly(p)
   })
+  
+  output$timePlot <- renderPlotly({
+    data <- ts_data()
+    
+    #title_text <- paste(input$plot_type, "for", input$site, "-", input$statistic, "-",
+                        #if(input$year_type == "Individual Years") {
+                        #  paste("Year:", paste(input$year, collapse = ", "))
+                      #  } else {
+                       #   paste("Year Range:", paste(input$year_range[1], "-", input$year_range[2]))
+                       # })
+    
+    p <- ggplot(data, aes(x = date, y = temperature, color = site)) +
+      geom_line() +
+      labs(title = "Daily Temperatures Over Time for Each Site",
+           x = "Date", y = "Temperature") +
+      theme_minimal() +
+      theme(legend.title = element_blank()) +
+      theme(legend.position="bottom")
+    
+    #if (input$site == "All Sites") {
+     # p <- p + facet_wrap(~site, scales = "free")
+    #}
+    
+    ggplotly(p)
+  })
 }
-                       
+          
 shinyApp(ui = ui, server = server)
 
 ```
 
+## Individual Contributions
 
-
-
+This is where we'll outline who did what
 
 
