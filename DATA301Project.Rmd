@@ -17,13 +17,7 @@ runtime: shiny
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Background and Data
-
-## Ethics and Privacy
-
-## Exploratory Data Analysis
-
-```{r, echo=FALSE}
+```{r, echo=FALSE, include=FALSE}
 
 #any packages we need to import can go here
 library(dplyr)
@@ -37,10 +31,11 @@ library(fpp3)
 library(forecast)
 library(fable)
 library(ggfortify)
+library(zoo)
 
 ```
 
-```{r}
+```{r, include=FALSE}
 #reading in and combining the three CSVs
 
 temp1 <- read.csv("daily-temperature-for-30-sites-to-2022-part1.csv")
@@ -70,11 +65,14 @@ temp <- temp %>%
 
 
 temp$date <- as.Date(temp$date) #convert date column to date object
+
+temp <- temp %>%
+  mutate(month = month(date, label = TRUE))%>%
+  mutate(month_year = paste(month, year)) %>%
+  mutate(month_year = (month_year)) #this makes it break
+
 temp <- temp %>% arrange(date) #sort data by date
-
 ```
-
-
 
 
 ```{r}
@@ -97,6 +95,24 @@ ui <- fluidPage(
   titlePanel("Temperature Data Analysis"),
   
   #tabbed layout
+  
+  tabsetPanel(
+    tabPanel("Written Report",
+             
+             mainPanel(
+               
+               tags$h3("Background and Data"),
+               tags$p("REPORT IN HERE"), #WRITE REPORT SECTION IN HERE
+               tags$h3("Ethics and Privacy"),
+               tags$p("REPORT IN HERE"), #WRITE REPORT SECTION IN HERE
+               
+             )
+    )),
+               
+               
+               
+             
+    
   tabsetPanel(
     tabPanel("Histogram/Density Plot",
              sidebarLayout(
@@ -268,7 +284,8 @@ ui <- fluidPage(
            ),
              mainPanel(
                div(class = "plot-container",
-                   plotlyOutput("timePlot", height = "100%")
+                   plotlyOutput("timePlot", height = "100%"),
+                   plotlyOutput("avgtimePlot", height = "100%")
                ),
                tags$div(
                  tags$h3("Time Series Analysis"),
@@ -374,7 +391,7 @@ server <- function(input, output, session) {
   output$ts_year_range_ui <- renderUI({
     if (input$ts_year_type == "Year Range") {
       sliderInput("ts_year_range", "Select Year Range:", sep="", min = min(temp$year), max = max(temp$year),
-                  value = c(1990, max(temp$year)), step = 1)
+                  value = c(2002, max(temp$year)), step = 1)
     } else {
       NULL
     }
@@ -572,28 +589,22 @@ server <- function(input, output, session) {
                        #   paste("Year Range:", paste(input$year_range[1], "-", input$year_range[2]))
                        # })
     
-    p <- ggplot(data, aes(x = date, y = temperature, color = site)) +
-      geom_line() +
-      labs(title = "Daily Temperatures Over Time for Each Site",
+    p <- ggplot(data, aes(x = date, y = temperature, group = site)) +
+      geom_line(size=0.1) +
+      labs(title = "Temperatures Over Time for Each Site",
            x = "Date", y = "Temperature") +
-      theme_minimal() +
-      theme(legend.title = element_blank()) +
-      theme(legend.position="bottom")
-    
-    #if (input$site == "All Sites") {
-     # p <- p + facet_wrap(~site, scales = "free")
-    #}
+      facet_wrap(~site, ncol=2) +
+      stat_smooth(colour = "red", linewidth=0.5)
+      theme_minimal()
     
     ggplotly(p)
   })
+  
 }
           
 shinyApp(ui = ui, server = server)
 
 ```
 
-## Individual Contributions
-
-This is where we'll outline who did what
 
 
