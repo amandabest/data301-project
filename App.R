@@ -1,29 +1,11 @@
----
-title: "Data 301 Project"
-author: "Group 4"
-date: "`r Sys.Date()`"
-output: html_document
-runtime: shiny
----
-```{css, echo=FALSE}
-.plot-container {
-  width: 100%;
-  height: 500px;
-  margin: auto;
-}
-```
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## Background and Data
-
-## Ethics and Privacy
-
-## Exploratory Data Analysis
-
-```{r, echo=FALSE}
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    https://shiny.posit.co/
+#
 
 #any packages we need to import can go here
 library(dplyr)
@@ -32,11 +14,6 @@ library(shiny)
 library(ggplot2)
 library(shinyjs)
 library(lubridate)
-
-```
-
-```{r}
-#reading in and combining the three CSVs
 
 temp1 <- read.csv("daily-temperature-for-30-sites-to-2022-part1.csv")
 temp2 <- read.csv("daily-temperature-for-30-sites-to-2022-part2.csv")
@@ -63,10 +40,7 @@ temp <- temp %>%
   mutate(season = get_season(date),
          year = year(ymd(date)))  #adding a year column for time-based analysis
 
-```
 
-## Individual Contributions
-```{r}
 #OPEN IN FULL SCREEN
 #when you run this code it might say error instead of displaying the graph/plot, just wait a little bit and it should correct itself (you will need to wait a little bit when applying filters and switching tabs to another plot, they will all say an error at first but disappear after a few seconds and then the plot is displayed)
 
@@ -481,11 +455,3 @@ server <- function(input, output, session) {
 }
                        
 shinyApp(ui = ui, server = server)
-
-```
-
-
-
-
-
-
