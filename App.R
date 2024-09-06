@@ -267,10 +267,7 @@ ui <- fluidPage(
                    #plotlyOutput("timePlot", height = "100%"),
                    plotlyOutput("avgtimePlot", height = "100%")
                ),
-               tags$div(
-                 tags$h3("Time Series Analysis"),
-                 tags$p("WRITE REPORT  IN HERE")
-               )
+               
              )
            )),
     )
@@ -370,7 +367,7 @@ server <- function(input, output, session) {
   
   output$ts_year_range_ui <- renderUI({
     if (input$ts_year_type == "Year Range") {
-      sliderInput("ts_year_range", "Select Year Range:", sep="", min = min(temp$year), max = max(temp$year),
+      sliderInput("ts_year_range", "Select Year Range:", sep="", min = 1966, max = max(temp$year),
                   value = c(2002, max(temp$year)), step = 1)
     } else {
       NULL
@@ -589,12 +586,12 @@ server <- function(input, output, session) {
            x = "Date", y = "Temperature (\u00B0C)") +
       facet_wrap(~site, ncol=2) +
       stat_smooth(colour = "red", linewidth=0.5) + 
-      theme_minimal()
+      theme(plot.margin = unit(c(2,1,2,1), "cm"))
     
     ggplotly(p)
   })
   
 }
-         
- 
+
+
 shinyApp(ui = ui, server = server)
