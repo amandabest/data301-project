@@ -32,6 +32,7 @@ library(forecast)
 library(fable)
 library(ggfortify)
 library(zoo)
+library(xts)
 
 ```
 
@@ -67,11 +68,12 @@ temp <- temp %>%
 temp$date <- as.Date(temp$date) #convert date column to date object
 
 temp <- temp %>%
-  mutate(month = month(date, label = TRUE))%>%
-  mutate(month_year = paste(month, year)) %>%
-  mutate(month_year = (month_year)) #this makes it break
+  mutate(month = month(date))%>%
+  mutate(month_year = format(as.Date(temp$date), "%Y-%m-01")) %>%
+  mutate(month_year = as.Date(month_year))
 
 temp <- temp %>% arrange(date) #sort data by date
+
 ```
 
 
@@ -97,7 +99,7 @@ ui <- fluidPage(
   #tabbed layout
   
   tabsetPanel(
-    tabPanel("Written Report",
+    
              
              mainPanel(
                
@@ -105,9 +107,9 @@ ui <- fluidPage(
                tags$p("REPORT IN HERE"), #WRITE REPORT SECTION IN HERE
                tags$h3("Ethics and Privacy"),
                tags$p("REPORT IN HERE"), #WRITE REPORT SECTION IN HERE
-               
+               tags$h3("Exploratory Data Analysis")
              )
-    )),
+    ),
                
                
                
@@ -284,7 +286,7 @@ ui <- fluidPage(
            ),
              mainPanel(
                div(class = "plot-container",
-                   plotlyOutput("timePlot", height = "100%"),
+                   #plotlyOutput("timePlot", height = "100%"),
                    plotlyOutput("avgtimePlot", height = "100%")
                ),
                tags$div(
@@ -579,32 +581,44 @@ server <- function(input, output, session) {
     ggplotly(p)
   })
   
-  output$timePlot <- renderPlotly({
+  #output$timePlot <- renderPlotly({
+   # data <- ts_data()
+    
+   # monthly_avg <- data %>%
+   #   group_by(site, statistic, month_year) %>%
+   #   summarise(avg_temp = mean(temperature, na.rm = TRUE)) %>%
+   #   ungroup()
+    
+  #  p <- ggplot(monthly_avg, aes(x = factor(month_year, ordered=TRUE), y = avg_temp, group = site)) +
+    #  geom_line(size=0.1) +
+    #  labs(title = "Temperature Over Time (monthly averages)",
+    #       x = "Date", y = "Temperature (\u00B0C)") +
+    #  facet_wrap(~site, ncol=2) +
+    #  stat_smooth(colour = "red", linewidth=0.5) + 
+    #  theme_minimal()
+    
+    #ggplotly(p)
+ # })
+  
+  output$avgtimePlot <- renderPlotly({
     data <- ts_data()
+    data <- data %>%
+      mutate(rolling_avg = rollmean(temperature, k=90, na.pad=TRUE))
     
-    #title_text <- paste(input$plot_type, "for", input$site, "-", input$statistic, "-",
-                        #if(input$year_type == "Individual Years") {
-                        #  paste("Year:", paste(input$year, collapse = ", "))
-                      #  } else {
-                       #   paste("Year Range:", paste(input$year_range[1], "-", input$year_range[2]))
-                       # })
-    
-    p <- ggplot(data, aes(x = date, y = temperature, group = site)) +
+    p <- ggplot(data, aes(x = date, y = rolling_avg, group = site)) +
       geom_line(size=0.1) +
-      labs(title = "Temperatures Over Time for Each Site",
-           x = "Date", y = "Temperature") +
+      labs(title = "Temperature Over Time (90-day smoothing)",
+           x = "Date", y = "Temperature (\u00B0C)") +
       facet_wrap(~site, ncol=2) +
-      stat_smooth(colour = "red", linewidth=0.5)
+      stat_smooth(colour = "red", linewidth=0.5) + 
       theme_minimal()
     
     ggplotly(p)
   })
   
 }
-          
+         
+ 
 shinyApp(ui = ui, server = server)
 
 ```
-
-
-
