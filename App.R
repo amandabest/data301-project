@@ -11,9 +11,16 @@
 library(dplyr)
 library(plotly)
 library(shiny)
+library(shinyWidgets)
 library(ggplot2)
 library(shinyjs)
 library(lubridate)
+library(fpp3)
+library(forecast)
+library(fable)
+library(ggfortify)
+library(zoo)
+library(xts)
 
 temp1 <- read.csv("daily-temperature-for-30-sites-to-2022-part1.csv")
 temp2 <- read.csv("daily-temperature-for-30-sites-to-2022-part2.csv")
@@ -40,6 +47,14 @@ temp <- temp %>%
   mutate(season = get_season(date),
          year = year(ymd(date)))  #adding a year column for time-based analysis
 
+temp$date <- as.Date(temp$date) #convert date column to date object
+
+temp <- temp %>%
+  mutate(month = month(date))%>%
+  mutate(month_year = format(as.Date(temp$date), "%Y-%m-01")) %>%
+  mutate(month_year = as.Date(month_year))
+
+temp <- temp %>% arrange(date) #sort data by date
 
 #OPEN IN FULL SCREEN
 #when you run this code it might say error instead of displaying the graph/plot, just wait a little bit and it should correct itself (you will need to wait a little bit when applying filters and switching tabs to another plot, they will all say an error at first but disappear after a few seconds and then the plot is displayed)
@@ -60,6 +75,24 @@ ui <- fluidPage(
   titlePanel("Temperature Data Analysis"),
   
   #tabbed layout
+  
+  tabsetPanel(
+    
+             
+             mainPanel(
+               
+               tags$h3("Background and Data"),
+               tags$p("REPORT IN HERE"), #WRITE REPORT SECTION IN HERE
+               tags$h3("Ethics and Privacy"),
+               tags$p("REPORT IN HERE"), #WRITE REPORT SECTION IN HERE
+               tags$h3("Exploratory Data Analysis")
+             )
+    ),
+               
+               
+               
+             
+    
   tabsetPanel(
     tabPanel("Histogram/Density Plot",
              sidebarLayout(
@@ -203,8 +236,41 @@ ui <- fluidPage(
                    tags$p("WRITE REPORT  IN HERE")
                  )
                )
-             ))
-  )
+             )),
+    
+      tabPanel("Time Series",
+           sidebarLayout(
+             sidebarPanel(
+               h4("Time Series"),
+               
+               #statistic selection
+               selectInput("ts_statistic", "Select Statistic:", 
+                           choices = unique(temp$statistic), selected = "Average"),
+               
+               #year selection
+               selectInput("ts_year_type", "Select Year(s):",
+                           choices = c("Individual Years", "Year Range"),
+                           selected = "Year Range"),
+               
+               uiOutput("ts_individual_year_ui"),
+               
+               uiOutput("ts_year_range_ui"),
+               
+               pickerInput("ts_site", "Select Site:", choices = unique(temp$site),
+                           selected = c("Whangārei (Northland)", "Auckland (Auckland)",
+                                        "Wellington (Wellington)", "Blenheim (Marlborough)",
+                                        "Christchurch (Canterbury)", "Invercargill (Southland)"),
+                           options = list(`actions-box` = TRUE), multiple = TRUE)
+           ),
+             mainPanel(
+               div(class = "plot-container",
+                   #plotlyOutput("timePlot", height = "100%"),
+                   plotlyOutput("avgtimePlot", height = "100%")
+               ),
+               
+             )
+           )),
+    )
 )
 
 
@@ -297,6 +363,24 @@ server <- function(input, output, session) {
       NULL
     }
   })
+
+  
+  output$ts_year_range_ui <- renderUI({
+    if (input$ts_year_type == "Year Range") {
+      sliderInput("ts_year_range", "Select Year Range:", sep="", min = 1966, max = max(temp$year),
+                  value = c(2002, max(temp$year)), step = 1)
+    } else {
+      NULL
+    }
+  })
+  
+  output$ts_individual_year_ui <- renderUI({
+    if (input$ts_year_type == "Individual Years") {
+      selectInput("ts_year", "Select Year(s):", choices = unique(temp$year), multiple = TRUE)
+    } else {
+      NULL
+    }
+  })
   
   #filter data based on the selected year and season
   filtered_data <- reactive({
@@ -311,6 +395,25 @@ server <- function(input, output, session) {
     if (input$season != "All") {
       data <- data %>% filter(season == input$season)
     }
+    
+    data
+  })
+  
+  #filter data based on the selected stat, site, and year
+  ts_data <- reactive({
+    
+    data <- temp %>% 
+      filter(statistic == input$ts_statistic & site %in% input$ts_site) %>% 
+      as_tsibble(key = site, index=date)
+    
+    
+    
+    if (input$ts_year_type == "Individual Years") {
+      data <- data %>% filter(year %in% input$ts_year)
+    } else if (input$ts_year_type == "Year Range") {
+      data <- data %>% filter(year >= input$ts_year_range[1] & year <= input$ts_year_range[2])
+    }
+    
     
     data
   })
@@ -452,6 +555,43 @@ server <- function(input, output, session) {
     
     ggplotly(p)
   })
+  
+  #output$timePlot <- renderPlotly({
+   # data <- ts_data()
+    
+   # monthly_avg <- data %>%
+   #   group_by(site, statistic, month_year) %>%
+   #   summarise(avg_temp = mean(temperature, na.rm = TRUE)) %>%
+   #   ungroup()
+    
+  #  p <- ggplot(monthly_avg, aes(x = factor(month_year, ordered=TRUE), y = avg_temp, group = site)) +
+    #  geom_line(size=0.1) +
+    #  labs(title = "Temperature Over Time (monthly averages)",
+    #       x = "Date", y = "Temperature (\u00B0C)") +
+    #  facet_wrap(~site, ncol=2) +
+    #  stat_smooth(colour = "red", linewidth=0.5) + 
+    #  theme_minimal()
+    
+    #ggplotly(p)
+ # })
+  
+  output$avgtimePlot <- renderPlotly({
+    data <- ts_data()
+    data <- data %>%
+      mutate(rolling_avg = rollmean(temperature, k=90, na.pad=TRUE))
+    
+    p <- ggplot(data, aes(x = date, y = rolling_avg, group = site)) +
+      geom_line(size=0.1) +
+      labs(title = "Temperature Over Time (90-day smoothing)",
+           x = "Date", y = "Temperature (\u00B0C)") +
+      facet_wrap(~site, ncol=2) +
+      stat_smooth(colour = "red", linewidth=0.5) + 
+      theme(plot.margin = unit(c(2,1,2,1), "cm"))
+    
+    ggplotly(p)
+  })
+  
 }
-                       
+
+
 shinyApp(ui = ui, server = server)
