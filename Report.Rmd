@@ -331,4 +331,13 @@ print(p)
 ```
 
 
+#### Individual Contributions
 
+##### Arman
+- **Histogram Analysis**: The histogram plots were designed, implemented, and analysed by Arman. He filtered the data, determined the bin widths, and wrote the analysis section that discusses the patterns and distributions observed in the data.
+  
+- **Boxplot Analysis**: The boxplot visualisations for the different seasons were created by Arman. He did the coding for the plots, made sure they represented temperature ranges across the sites appropriately, and interpreted the why of the seasonal differences. He did the detailed write-up of the boxplots, which highlight some of the important findings regarding temperature trends across different seasons. 
+  
+- **Correlation Matrix Analysis**: Arman created a correlation matrix to explore relationships among temperature variations at various sites across North Island. He managed data processing, matrix calculation, visualisation and provided written analyses on temperature correlations among them.
+
+- **General Contributions**: In addition to the specific duties noted above, Arman contributed to the Background and Data and the Ethics, Privacy, and Security sections of the report. These sections were developed collaboratively, with each team member providing input to achieve the necessary accuracy and completeness in explaining the data source, structure, and ethical aspects of our work.
