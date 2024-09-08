@@ -22,9 +22,10 @@ library(ggfortify)
 library(zoo)
 library(xts)
 
-temp1 <- read.csv("daily-temperature-for-30-sites-to-2022-part1.csv")
-temp2 <- read.csv("daily-temperature-for-30-sites-to-2022-part2.csv")
-temp3 <- read.csv("daily-temperature-for-30-sites-to-2022-part3.csv")
+
+temp1 <- read.csv("daily-temperature-for-30-sites-to-2022-part1.csv", fileEncoding = "UTF-8")
+temp2 <- read.csv("daily-temperature-for-30-sites-to-2022-part2.csv", fileEncoding = "UTF-8")
+temp3 <- read.csv("daily-temperature-for-30-sites-to-2022-part3.csv", fileEncoding = "UTF-8")
 
 temp4 <- full_join(temp1, temp2)
 temp <- full_join(temp4, temp3)
