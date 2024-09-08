@@ -141,13 +141,13 @@ library(ggplot2)
 library(dplyr)
 library(gridExtra)
 
-# Filter data for each season
+#filter data for each season
 summer_data <- temp %>% filter(season == "Summer", statistic == "Average", site %in% north_island_sites)
 autumn_data <- temp %>% filter(season == "Autumn", statistic == "Average", site %in% north_island_sites)
 winter_data <- temp %>% filter(season == "Winter", statistic == "Average", site %in% north_island_sites)
 spring_data <- temp %>% filter(season == "Spring", statistic == "Average", site %in% north_island_sites)
 
-# Create individual boxplots
+#create individual boxplots
 p1 <- ggplot(summer_data, aes(x = factor(site), y = temperature)) +
   geom_boxplot() +
   theme_minimal() +
@@ -208,7 +208,7 @@ p4 <- ggplot(spring_data, aes(x = factor(site), y = temperature)) +
     y = "Temperature (Celsius)"
   )
 
-# Arrange the plots in a 2x2 grid
+#arrange the plots in a 2x2 grid
 grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
 
 
