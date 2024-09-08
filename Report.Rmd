@@ -1,0 +1,343 @@
+---
+title: "Report"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    css: |
+      body {
+        max-width: 100%;
+      }
+    fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+## Title
+# CAN SOMEONE PLS COME UP WITH A PROJECT TITLE
+Arman Choudhry (300574050)
+
+## Background and Data
+
+The National Climate Database of the National Institute of Water and Atmospheric Research (NIWA) is the partner that delivered the data for this project. Devised in 1990, the National Climate Database has been collecting national, regional, and local climate data to serve New Zealand and the world for over three decades. The project benefits from the extensive experience that NIWA's Climate Division has in this field. Consequently, the database incorporates climate data from a wide array of sites across New Zealand. Data from 72 long-term climate monitoring sites have been used to develop this database; the sites together span the country from north to south and also cover most of the main topographic forms that New Zealand displays. 
+
+
+During the past century, New Zealand's climate has changed dramatically. One of the main reasons for this is that, just like everywhere else, our atmosphere is becoming enriched with greenhouse gases. But while some parts of the world have been getting hotter in a relatively steady way, here in NZ, we've had several stretches of time when there have been intense warmth during this warming period. 
+
+
+This study's main aim is to sift through and scrutinise the temperature data from the North Island sites to uncover clusters of like kind among them. 
+
+**Data Types and Structure**
+
+The dataset includes several key types of data:
+
+- **Site:** The name of the site where the temperature was measured (character).
+- **Date:** The date when the temperature was measured (Date).
+- **Statistic:** The type of temperature measurement (e.g., "Maximum," "Minimum," "Average") (character).
+- **Temperature:** The measured temperature in degrees Celsius (numeric).
+- **Latitude/Longitude (Lat/Lon):** The geographical coordinates of the measurement site (numeric).
+
+⁤This data is structured primarily as a time series, covering multiple decades. ⁤⁤Latitude and longitude coordinates enable geographical analysis while temporal information (date, year, month) allows us to do a more in-depth analysis
+
+# SHUBHAM CAN YOU PLS PUT A SMALL STATEMENT/PARAGRAPH ABOUT THE MISSING VALUES HERE
+
+
+We made a dataset for analysis that included all the temperature data we had. At first, these data existed in three separate CSV files. We used R to combine the files into one using the full_join function. We were careful not to lose any records or to ignore any data during the merging process. The results preserved the integrity of the time series data across all 30 sites.
+
+
+## Ethics, Privacy and Security
+
+The data for this project come from public temperature recordings made at climate stations across New Zealand. Because the dataset does not contain personal information and does not involve research on human subjects, the ethical concerns associated with using it are negligible. 
+
+
+It is still essential, though, to use the data with respect and in a manner consistent with its original purpose. We aim to use it to gain a better grasp of climate trends in New Zealand and potentially to help alleviate any misunderstandings about the local effects of climate change. We intend to communicate what we find in a manner consistent with the principles of responsible research - namely, with transparency and accuracy at the forefront. 
+
+**Māori Data Sovereignty**
+
+Māori data sovereignty is very important in New Zealand, even when dealing with publicly available datasets. It ensures the rights of Māori people to control the collection, ownership, and use of any data about them or that relates to their interests. While the temperature data used in this study may not directly involve Māori communities or individuals, it is public data collected in Aotearoa, New Zealand, which means it has the potential to affect Māori interests and values. 
+
+
+We are gathering findings that could be impactful for Māori communities, especially concerning the centrality of land and environmental issues to Māori culture and well-being. We are committed to ensuring that this research is respectful of Māori data rights and that it operates within the principles of kaitiakitanga (guardianship) and rangatiratanga (self-determination) that Māori adhere to. 
+
+**Privacy and Security Considerations**
+
+Even though this research does not engage with sensitive or personal data, it is still critical to maintain the integrity of the dataset. A major step taken in this project to attain that goal is the use of version control. By keeping a clear record of all the dataset's modifications, version control allows us to document the changes made to the dataset and helps ensure that any unauthorized changes can be easily discovered. In the event that we do need to discover any "who," "what," or "when," we can do so through GitHub, allowing for a fairly traceable path to any changes made. We can also reverse any changes and uphold the dataset's integrity. 
+
+
+## Exploratory Data Analysis
+```{r,echo=FALSE}
+# Define the North Island sites
+north_island_sites <- c(
+  "Wellington (Wellington)", "Napier (Hawke's Bay)", "Gisborne (Gisborne)",
+  "Tauranga (Bay of Plenty)", "New Plymouth (Taranaki)", "Taumarunui (Manawatū-Whanganui)",
+  "Dannevirke (Manawatū-Whanganui)", "Auckland (Auckland)", "Whangārei (Northland)",
+  "Hamilton (Waikato)", "Masterton (Wellington)", "Rotorua (Bay of Plenty)",
+  "Taupō (Waikato)", "Waiouru (Manawatū-Whanganui)", "Whanganui (Manawatū-Whanganui)",
+  "Whangaparāoa (Auckland)"
+)
+```
+
+
+### Histograms
+```{r north-island-histogram, echo=FALSE, fig.width=14, fig.height=10, fig.cap="Figure 1: Histogram of average temperatures for North Island sites across all seasons, using a binwidth of 1, Each subplot represents one site for visual comparison of temperature distribution"}
+source("App.R")
+
+library(ggplot2)
+
+
+
+#filter the data for the North Island sites and all seasons
+filtered_data <- temp %>%
+  filter(site %in% north_island_sites)
+
+p <- ggplot(filtered_data, aes(x = temperature)) + 
+  theme_minimal() +
+  geom_histogram(binwidth = 1, fill = "blue", alpha = 0.7) +
+  ggtitle("Histogram of Average Temperatures", 
+          subtitle = "For North Island Sites Across All Seasons") +
+  labs(x = "Temperature (Celcius)", y = "Count") +
+  facet_wrap(~site, scales = "free", ncol = 4) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    strip.text = element_text(size = 10)
+  )
+
+ggsave("North_Island_Histogram_All_Seasons.jpg", plot = p, width = 14, height = 10)
+
+
+print(p)
+```
+
+
+
+##### **Observations:**
+
+**Shape and Symmetry:**
+Temperature distributions across many sites such as Auckland (Auckland), Hamilton (Waikato), and Wellington (Wellington) exhibit bell-shaped curves indicative of normal distributions. This data indicates that temperatures tend to cluster around a central mean, with two equally likely extreme temperature distributions on either side of it. Waiouru in Manawatu-Whanganui and Rotorua in Bay of Plenty deviate slightly from this pattern in their distribution patterns; here the distributions appear somewhat irregular. Waiouru shows mild negative skewness (left skew), with longer tails on lower temperature sides; Rotorua shows slight positive skewness (right skew), with longer tails at higher temperature sides. Though these levels of skewness aren't drastic, they suggest these sites experience more frequent extreme temperatures on one end of their temperature spectrum than another.
+
+**Temperature range:**
+For most sites, the temperature range is from around 0°C to 30°C. However, Waiouru (in Manawatū-Whanganui) and Taumarunui (also in Manawatū-Whanganui) have distributions that extend well into the negative range, which means they occasionally experience average temperatures below freezing, most likely in the winter months. This indicates that these two areas are much more likely to experience extremes on the cold side of the spectrum compared to other locations on the North Island.
+
+Most locations on New Zealand's North Island have average temperatures that fit the usual distribution. However, a few places, such as Waiouru and Taumarunui, are much colder and don't resemble the rest of the North Island. So these two spots and a couple of others help show that there's real regional climatic diversity across the North Island, with some places having quite different conditions from others.
+
+
+
+
+
+### Boxplots per season
+
+
+Examining the average temperature distributions allows for the construction of an understanding of the climate dynamics of the North Island of New Zealand. Below are four boxplots that represent the four seasons - Spring, Summer, Autumn, and Winter - for all sites on the North Island over a roughly 60-year span. The plots clearly show how the seasonal average temperatures are distributed across the North Island, in addition to what is happening at each site in terms of temperature variance from season to season. 
+
+
+```{r seasonal-boxplots-2x2, echo=FALSE, fig.width=14, fig.height=10, fig.cap="Figure 2: Boxplots of average temperatures for North Island sites across all seasons."}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+
+#filter data for each season
+summer_data <- temp %>% filter(season == "Summer", statistic == "Average", site %in% north_island_sites)
+autumn_data <- temp %>% filter(season == "Autumn", statistic == "Average", site %in% north_island_sites)
+winter_data <- temp %>% filter(season == "Winter", statistic == "Average", site %in% north_island_sites)
+spring_data <- temp %>% filter(season == "Spring", statistic == "Average", site %in% north_island_sites)
+
+#create individual boxplots
+p1 <- ggplot(summer_data, aes(x = factor(site), y = temperature)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+  ) +
+  labs(
+    title = "Summer Season",
+    x = "Site",
+    y = "Temperature (Celsius)"
+  )
+
+p2 <- ggplot(autumn_data, aes(x = factor(site), y = temperature)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+  ) +
+  labs(
+    title = "Autumn Season",
+    x = "Site",
+    y = "Temperature (Celsius)"
+  )
+
+p3 <- ggplot(winter_data, aes(x = factor(site), y = temperature)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+  ) +
+  labs(
+    title = "Winter Season",
+    x = "Site",
+    y = "Temperature (Celsius)"
+  )
+
+p4 <- ggplot(spring_data, aes(x = factor(site), y = temperature)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.title.x = element_text(size = 12),
+    axis.title.y = element_text(size = 12),
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+  ) +
+  labs(
+    title = "Spring Season",
+    x = "Site",
+    y = "Temperature (Celsius)"
+  )
+
+#arrange the plots in a 2x2 grid
+grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
+
+
+```
+
+##### **Summer:**
+
+The highest median temperatures, normally between 15ºC and 22ºC, are found in the summer. In this season, places such as the coastal Northland city of Whangarei and the Bay of Plenty city of Tauranga enjoy their median warmest temperatures. On the other hand, inland summer sites such as Waiouru (Manawatū-Whanganui) do not come close to the kinds of temperatures experienced at these northern coastal towns. 
+
+In some respects, summer is also the most predictable of New Zealand's seasons, with its warm temperatures reliably extending over prolonged periods. This is reflected by summer having the narrowest IQR. However, when it comes to the temperature extremes, the IQR and the median in the warmest summer location do not appear to be significantly higher than the temperature spread and median in places that have their warmest median in spring.
+
+##### **Autumn:**
+
+Autumn serves as an indicator of winter's approach, with median temperatures generally falling from the high summer temperatures of 10ºC-15ºC across all sites and coastal regions experiencing slightly higher median temps compared to inland locations - this seasonal shift provides clear warning of its approach. 
+
+Autumn temperatures vary with each passing season and its variability affects temperature IQR more than winter IQR; Gisborne (Gisborne) and New Plymouth (Taranaki) see narrower IQRs suggesting more stable temperatures this autumn compared with winter; Waiouru in Manawatu-Whanganui still experiences some lower outliers below 5ºC due to early frosts or cooler nights typical of this transitional time of year.
+
+##### **Winter:**
+
+The winter months, when median temperatures are between 5°C and 12°C, are the coldest in most parts of the North Island. Areas such as Taupo (Waikato) and Waiouru (Manawatū-Whanganui) are some of the coldest places in the North Island during this time, hitting median temperatures closer to 5°C. The IQR for this season is the narrowest of any season, indicating that it is mostly stable but mostly cold. The IQR is slightly lower in Auckland (Auckland) and Whangarei (Northland) because these coastal areas are likely experiencing the milder conditions associated with the ocean's moderating effect. We noted above that Waiouru has significant outliers that hit below 0°C, implying these numbers reflect a few times when it was freezing cold across these sites - a common occurrence in this region of the North Island.
+
+##### **Spring:**
+
+Spring is a time of shifting weather patterns and a moderate temperature range across the North Island. Generally, spring temperatures range from 12°C to 18°C. For the most part, inland areas like Taupo and Waiouru are cooler than coastal areas like Auckland and Whangarei. The ocean's moderating effect keeps coastal temperatures milder, with fewer ups and downs, than those experienced in wider Consistent with their average temperatures, inland areas do tend to have moderate ranges.
+
+
+
+
+The North Island sites reveal substantial temperature differences that reflect the typical expected seasonal patterns in New Zealand. The inland and more elevated sites - especially  Waiouru (in the Manawatū-Whanganui region) and Taupo (in the Waikato region) - show lower average median temperatures. They also have a wider range of temperatures, particularly in winter and spring. In contrast, the coastal sites have average temperatures that are a little more stable and a little less warm than those of the inland and coastal sites. 
+
+
+### Correlation Matrix
+```{r site-correlation-matrix, echo=FALSE, fig.width=14, fig.height=10, fig.cap="Figure 6: Correlation Matrix of Average Temperatures by Site."}
+
+library(tidyr)
+
+#filter the data for 'Average' statistic and aggregate over all seasons
+average_data <- temp %>%
+  filter(statistic == "Average", site %in% north_island_sites) %>%
+  group_by(site) %>%
+  summarise(mean_temp = mean(temperature, na.rm = TRUE)) %>%
+  ungroup()
+
+#pivot data to wide format, where each site becomes a column
+wide_data <- temp %>%
+  filter(statistic == "Average", site %in% north_island_sites) %>%
+  select(site, date, temperature) %>%
+  group_by(site, date) %>%
+  summarise(mean_temp = mean(temperature, na.rm = TRUE)) %>%
+  pivot_wider(names_from = site, values_from = mean_temp)
+
+cor_matrix <- cor(wide_data[-1], use = "complete.obs")
+
+#convert correlation matrix to long format for plotting
+cor_data <- as.data.frame(as.table(cor_matrix))
+cor_data$Var1 <- as.factor(cor_data$Var1)
+cor_data$Var2 <- as.factor(cor_data$Var2)
+
+p <- ggplot(cor_data, aes(x = Var1, y = Var2, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(Freq, 2), color = ifelse(Freq == 1, "white", "black")), size = 3) + # Conditional text color
+  scale_color_identity() + # Use the color identity scale
+  scale_fill_gradientn(colors = RColorBrewer::brewer.pal(11, "RdBu"), na.value = "grey90") +
+  theme_minimal() +
+  labs(
+    x = "Site",
+    y = "Site",
+    fill = "Correlation",
+    title = "Correlation Matrix of Average Temperatures by Site"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+p
+
+```
+
+The average temperature correlation matrix for North Island sites provides some clear signals about the temperature relationships among these locations. Most of the correlation coefficients fall within a rather narrowly defined range of 0.85 to 1.00. The sites' temperatures tend to move in tandem, indicating that they're under the influence of the same (or very similar) set of climatic factors and yielding a pretty well-defined and cohesive temperature pattern across the North Island.
+
+However, there are some notable deviations. One of them is Wellington, which has somewhat lower correlations with other sites, sometimes dipping as low as 0.85. This might reflect the way Wellington's geography, with its urban topography and coastal-wind conditions, partly determines a rather special microclimate. Another site with lower correlations is Gisborne; its location on the east coast, with its somewhat sheltered situation, probably also allows it to indulge in a special microclimate. On the other hand, locations in the central North Island—such as Hamilton (Waikato), Rotorua (Bay of Plenty), and Taupō (Waikato)—show very strong correlations that are often near 1.00. The sites have similar environmental conditions, which accounts for the similarity of their temperature patterns.
+
+In general, this matrix of correlations highlights the vigorous temperature relationships at the majority of North Island sites. A few exceptions can be attributed to geographical and climatic factors that provide effective explanations for them. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+#### Time Series
+```{r time-series-plot, echo=FALSE, fig.width=14, fig.height=10, fig.cap="Figure 7: Temperature Over Time (90-day smoothing) by Site."}
+
+ts_data <- temp %>%
+  filter(statistic == "Average", site %in% north_island_sites) %>%
+  group_by(site, date) %>%
+  summarise(mean_temp = mean(temperature, na.rm = TRUE)) %>%
+  ungroup()
+
+#calculate the 90-day rolling average
+ts_data <- ts_data %>%
+  group_by(site) %>%
+  mutate(rolling_avg = rollmean(mean_temp, k = 90, fill = NA, align = "right")) %>%
+  ungroup()
+
+#plot the time series data with 90-day smoothing
+p <- ggplot(ts_data, aes(x = date, y = rolling_avg, group = site, color = site)) +
+  geom_line(size = 0.5) +
+  facet_wrap(~ site, scales = "free_y", ncol = 2) +
+  labs(
+    title = "Temperature Over Time (90-day smoothing)",
+    x = "Date",
+    y = "Temperature (\u00B0C)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.margin = unit(c(2, 1, 2, 1), "cm"),
+    legend.position = "none",
+    strip.text = element_text(size = 10)
+  )
+
+print(p)
+```
+
+
+#### Individual Contributions
+
+##### Arman
+- **Histogram Analysis**: The histogram plots were designed, implemented, and analysed by Arman. He filtered the data, determined the bin widths, and wrote the analysis section that discusses the patterns and distributions observed in the data.
+  
+- **Boxplot Analysis**: The boxplot visualisations for the different seasons were created by Arman. He did the coding for the plots, made sure they represented temperature ranges across the sites appropriately, and interpreted the why of the seasonal differences. He did the detailed write-up of the boxplots, which highlight some of the important findings regarding temperature trends across different seasons. 
+  
+- **Correlation Matrix Analysis**: Arman created a correlation matrix to explore relationships among temperature variations at various sites across North Island. He managed data processing, matrix calculation, visualisation and provided written analyses on temperature correlations among them.
+
+- **General Contributions**: In addition to the specific duties noted above, Arman contributed to the Background and Data and the Ethics, Privacy, and Security sections of the report. These sections were developed collaboratively, with each team member providing input to achieve the necessary accuracy and completeness in explaining the data source, structure, and ethical aspects of our work.
