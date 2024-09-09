@@ -38,9 +38,7 @@ The dataset includes several key variables:
 
 This data is structured primarily as a time series, covering multiple decades. Latitude and longitude coordinates enable geographical analysis while temporal information (date, year, month) allows us to do a more in-depth analysis
 
-# SHUBHAM CAN YOU PLS PUT A SMALL STATEMENT/PARAGRAPH ABOUT THE MISSING VALUES HERE
-
-We made a dataset for analysis that included all the temperature data we had. At first, these data existed in three separate CSV files. We used R to combine the files into one using the full_join function. We were careful not to lose any records or to ignore any data during the merging process. The results preserved the integrity of the time series data across all 30 sites.
+We made a dataset for analysis that included all the temperature data we had. At first, these data existed in three separate CSV files. We used R to combine the files into one using the full_join function. We were careful not to lose any records or to ignore any data during the merging process. The results preserved the integrity of the time series data across all 30 sites. No missing values were present in the final dataset we used.
 
 ## Ethics, Privacy and Security
 
@@ -75,6 +73,165 @@ north_island_sites <- c(
   "Whangaparāoa (Auckland)"
 )
 ```
+
+```{r, error=TRUE}
+library(dplyr)
+library(ggplot2) 
+library(sf)
+library(ggspatial)
+```
+
+```{r, error=TRUE}
+set.seed(123) clusters <- kmeans(temp$temperature, centers = 4) temp$cluster <- as.factor(clusters$cluster)
+
+temp_north_island <- temp %>% filter(site %in% north_island_sites)
+```
+## Summary Statistics
+
+```{r, error=TRUE}
+summary_stats <- temp_north_island %>% group_by(statistic) %>% summarise( mean_temp = mean(temperature, na.rm = TRUE), median_temp = median(temperature, na.rm = TRUE), sd_temp = sd(temperature, na.rm = TRUE), min_temp = min(temperature, na.rm = TRUE), max_temp = max(temperature, na.rm = TRUE), q1_temp = quantile(temperature, 0.25, na.rm = TRUE), q3_temp = quantile(temperature, 0.75, na.rm = TRUE) ) print(summary_stats)
+```
+### Average Temperature: 
+* Mean(13.52°C): the average temperature across all locations is around 13.5°C. This suggests a relatively mild climate on average. 
+* Median(13.5°C): the median matches the mean, indicating a fairly symmetrical data distribution. 
+* Standard Deviation(4.36°C): the variation in average temperatures is moderate, showing that most daily averages hover around the mean. 
+* Minimum(3.2°C): Some areas or days experience very cold temperatures, though these are rare. 
+* Maximum(29.3°C): The highest recorded average temperature approaches 30°C, indicating warmer periods. 
+* First and Third Quantiles(10.4°C, 16.8°C): The IQR of 6.4°C shows the spread of central 50% of temperatures implying moderate temperature variation.
+
+### Maximum Temperature: 
+* Mean(17.95°C): the average maximum temperature is close to 18°C, which is typical of warmer daytime conditions. 
+* Median(17.7°C): similar to the mean, suggesting that extreme values don’t heavily skew the distribution. 
+* Standard Deviation(4.69°C): there is a larger spread in maximum temperatures, which might reflect greater daily variability in warm periods. 
+* Minimum(-0.9°C): this indicates that even the maximum temperatures occasionally dip below freezing in rare circumstances. 
+* Maximum(38°C): some locations experience significant heat, with temperatures soaring up to 38°C, reflecting potential heat waves. 
+* First and Third Quantiles(14.6°C, 21.4°C): The IQR of 6.8°C suggests a broad range of daily maximum temperatures between 14.6°C and 21.4°C, covering cooler and warmer days.
+
+### Minimum temperatures: 
+* Mean(9.08°C): the average minimum temperature is around 9°C, which indicates cooler nights but not generally extreme cold. 
+* Median(9.4°C): similar to the mean, indicating a balanced distribution of minimum temperatures. 
+* Standard Deviation(4.86°C): there is a higher variability in minimum temperatures, suggesting that night time temperatures can vary more widely compared to daily averages or maximums. 
+* Minimum(-10.1°C): the coldest recorded minimum is very low, possibly from colder, high altitude, or southern regions. 
+* Maximum(25.6°C): the highest recorded minimum temperature is 25.6°C, showing that even the nights can be very warm in some instances. 
+* First and Third Quantiles(5.8°C, 12.6°C): The IQR of 6.8°C shows that 50% of minimum temperatures fall between 5.8°C and 12.6°C, indicating that many nights fall in their school to mild range.
+
+### General Observations: 
+* Symmetry: For both average and maximum temperatures, the mean and median are close, which suggests that these variables are fairly symmetrically distributed. For minimum temperatures, there is a slight skew towards colder values. 
+* Range: The wide range between the minimum and maximum temperatures across all types of measurements reflects the diverse climate conditions across North Island locations, from cooler inland regions to warmer coastal areas. 
+* Temperature Spread: The larger spread in standard deviations and IQRs for maximum and minimum temperatures suggests greater daily variability, particularly during extreme weather events. * Mild Climate: The data confirms that North Island generally experiences a mild climate, with average temperatures staying within comfortable ranges, but extremes highlight occasional weather volatility.
+
+## Missing Data
+
+```{r, error=TRUE}
+missing_data_summary <- temp_north_island %>% group_by(site) %>%
+summarise( missing_count = sum(is.na(temperature)), total_obs = n(), missing_percentage = (missing_count/total_obs) * 100 ) %>% arrange(desc(missing_count)) print(missing_data_summary)
+```
+There are no missing values in the dataset.
+
+## Geographical Analysis:
+
+### Geographical Plots
+
+```{r, error=TRUE}
+north_island_sf <- st_as_sf(temp_north_island, coords = c("lon", "lat"), crs = 4326) 
+ggplot() + borders("nz", color = "gray85", fill = "gray80") + 
+geom_sf(data = north_island_sf, aes(color = temperature), size = 2, alpha = 0.7) + 
+scale_color_viridis_c(option = "C", name = "Temperature (Celsius)", limits = c(min(temp_north_island$temperature, na.rm = TRUE), max(temp_north_island$temperature, na.rm = TRUE))) + 
+coord_sf(xlim = c(172, 179), ylim = c(-41.5, -34), expand = FALSE) + theme_minimal() + 
+labs(title = "Average Temperature at North Island Locations", x = "Longitude", y = "Latitude") + 
+annotation_scale(location = "bl", width_hint = 0.5) + 
+annotation_north_arrow(location = "tl", which_north = "true", style = north_arrow_fancy_orienteering)
+```
+
+Temperature distribution: The plot shows a fairly uniform distribution of average temperatures across North Island, with most locations showing average temperatures in a similar range(between 10°C and 20°C). 
+* Higher temperatures: locations near the northernmost part of the island seemed to have a slightly higher average temperature compared to southern locations. 
+* Lower temperatures: as remove further South, suggest in Wellington, temperatures appear to decrease slightly indicating cooler conditions.
+
+Geographical Gradient: There is a potential north-south temperature gradient, where temperatures gradually decrease from northern regions(closer to the tropics) to the southern regions(closer to Wellington). This aligns with the geographical expectation that area is closer to the equator tend to be warmer.
+
+No Extreme Temperature Outliers: The temperature range in this plot seems to be fairly moderate. No extreme anomalies such as very high or very low temperatures are immediately visible, suggesting stable climatic conditions across the locations shown.
+
+Coastal vs Inland: * Although difficult to assess without more data, coastal locations suggest Auckland, Tauranga, and Wellington may show more moderate temperatures due to the tempering effect of the ocean. Inland locations like Taupo and Rotorua might exhibit a slightly wider temperature variation but this is not immediately apparent from this plot.
+
+To summarize, this plot confirms the expected temperature patterns in New Zealand North Island, which slightly warmer temperatures in the north and cooler temperatures as you
+move South. However it must be noted that no extreme outliers or dramatic geographical temperature variations are immediately noticeable in this representation.
+
+### Visualize Clusters
+
+```{r, error=TRUE}
+ggplot() + 
+borders("nz", color = "gray85", fill = "gray80") + 
+geom_sf(data = north_island_sf, aes(color = as.factor(cluster)), size = 3, alpha = 0.8) + scale_color_manual(values = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"), name = "Cluster") + 
+coord_sf(xlim = c(170, 180), ylim = c(-41.5, -34), expand = FALSE) + theme_minimal() + 
+labs(title = "Geographical Clusters of Temperature Data", x = "Longitude", y = "Latitude") + 
+annotation_scale(location = "bl", width_hint = 0.5) + 
+annotation_north_arrow(location = "tl", which_north = "true", style = north_arrow_fancy_orienteering)
+```
+
+Cluster Distribution: 
+* The Cluster 4(red) dominates the southern regions, which suggests that temperature data in southern areas may be more homogeneous or potentially cooler while northern regions may have distinct temperature patterns this is consistent with the earlier plot. 
+* The regions are more diverse in their clustering, with clusters 2, 3 and 4 scattered throughout. This could imply that the central part of the island experience is more variability in temperature.
+
+Climate Zones: Cluster 4 (red): likely reflects cooler climates, as it includes Wellington and other southern locations, which are expected to have lower temperatures. Cluster 3 (green) and Cluster 2 (orange) may represent transitional zones with intermediate climate characteristics especially when compared with cluster 4. This clustering suggests distinct temperature patterns based on geography, with the Inland regions showing more variability in temperature, while the southern part of the island has more homogeneity.
+
+### Anomaly Detection:
+
+```{r, error=TRUE}
+outlier_detection <- temp_north_island %>% 
+filter(statistic == "Average") %>% 
+summarise( Q1 = quantile(temperature, 0.25, na.rm = TRUE),
+           Q3 = quantile(temperature, 0.75, na.rm = TRUE), 
+          IQR = IQR(temperature, na.rm = TRUE) ) 
+
+lower_bound <- outlier_detection$Q1 - 1.5 * outlier_detection$IQR 
+upper_bound <- outlier_detection$Q3 + 1.5 * outlier_detection$IQR 
+
+temp_north_island <- temp_north_island %>% 
+mutate( outlier = ifelse(statistic == "Average" & (temperature < lower_bound | temperature > upper_bound), "Yes", "No")) 
+
+ggplot(temp_north_island %>% 
+filter(statistic == "Average"), aes(x = date, y = temperature, color = outlier)) + 
+geom_point(size = 1.0, alpha = 0.5) + 
+scale_color_manual(values = c("No" = "cyan", "Yes" = "red"), name = "Outlier") + 
+labs(title = "Scatter Plot of Average Temperature with Outliers", y = "Temperature (Celsius)", x = "Date") + 
+theme_minimal() + 
+theme(legend.position = "bottom")
+```
+
+Outlier Distribution: 
+* The outliers are marked in red, while the non-outliers are shown in blue. 
+* Outliers are concentrated on both the upper and lower extremes of the temperature range specifically: High temperature outliers(above ~ 25°C) are scattered more frequently in the earlier years around pre 1980s, but continue to be observed irregularly overtime. Low temperature outliers(below ~ 5°C) are more common and consistent across the entire timeline, particularly in the latter half of the plot which is post 1950s.
+
+Outlier Trends: 
+* A noticeable increase in temperature outliers is seen from around 1960 onward, especially near both the upper and lower boundaries of the temperature range. 
+* The presence of outliers near 0°C in the latter half of the timeline could indicate extreme cold events, which may be tied to specific weather patterns or seasonal variations. 
+* Extreme high temperatures above 25°C, are more noticeable in the earlier part of the data set around the pre 1970s, although they become less frequent as time progresses.
+
+Time Periods of Interest: 
+* There appears to be more concentration of outliers in the early 20th century and toward the present day (post 1980s). This this shift in weather patterns could suggest the changes caused by climate change. Seasonal influences may also play a role, with cold or hot normally is occurring at different periods in the year
+This plot highlight significant variations at both temperature extremes, indicating periods of abnormal weather or data anomalies. Further analysis could be done on a much more broader data set, however, within the constraints on the data this is all that’s been concluded.
+
+### Temporal Anomalies
+
+```{r, error = TRUE}
+temp_north_island <- temp_north_island %>% 
+arrange(date) %>% 
+group_by(site) %>% 
+mutate(temp_change = temperature - lag(temperature)) 
+
+ggplot(temp_north_island, aes(x = temp_change)) + 
+geom_histogram(binwidth = 1, fill = "blue", color = "black", alpha = 0.7) + 
+labs(title = "Distribution of Daily Temperature Changes", x = "Temperature Change (Celsius)", y = "Frequency") + 
+theme_minimal()
+```
+
+Insights from the Histogram: 
+* The large peak at around 4°C indicates that most of the daily temperature changes are around this value. This suggests that moderate warming occurs frequently with daily temperatures often increasing by approximately 4°C. 
+* The smaller B cat -6°C indicates that there are fewer instances of daily temperature decreases around this value. It’s just that while less common significant daily drops in temperature do occur. 
+* The broad spread of temperature changes from -20°C to 15°C indicates a wide range of temperature fluctuations. This suggests variability in temperature changes, with very large increases and decreases occurring although it happens less frequently.
+* a left skew in the histogram means that there are more frequent smaller temperature increases, with the tail extended towards larger negative changes. This implies that there are more moderate daily increases in temperature and fewer extreme temperature drops. 
+* The plot does not appear to be symmetrical. The lack of symmetry and the presence of a peak around 4°C suggests that the distribution of daily temperature changes is not balanced. Instead there is a tendency towards positive changes(warming) with future currencies of large negative changes(cooling). 
+To summarize this, the Lord shows daily temperature changes tend to be moderate with a general tendency towards warming. However there are occasional significant temperature drops and the variability in changes suggest a climate with potential for warming and cooling extremes although pointed more in the warming direction.
 
 ### Histograms
 
@@ -373,3 +530,12 @@ The seasonal plot also shows that although the various locations experience occa
 
 -   **Time Series**: Amanda developed the time series plots and provided the written analysis.
 -   **GitHub**: Amanda set up the group project on GitHub
+
+##### Shubham
+
+- **Overview of data**: Shubham did the basic overview providing the basic summary statistics for the temperature data, including mean, median, standard deviation, minimum, maximum, and quartiles for each type of measurement (min, max, and average temperatures) across all sites.
+
+- **Geographical analysis**: Shubham did the geographic plots by overlaying the temperature data onto the North Island to identify any patterns. Also made visualization for the clusters to check for any geographical significance.
+
+- **Anomaly Detection**: Made a histogram to check for temporal anomalies that can indicate data anomalies or extreme weather events.
+
